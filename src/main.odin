@@ -4,28 +4,37 @@ import "core:fmt"
 import rl "vendor:raylib"
 
 Player :: struct {
-	position: rl.Vector2,
-	speed:    f32,
+	position:   rl.Vector2,
+	velocity:   rl.Vector2,
+	speed:      f32,
+	is_jumping: bool,
 }
 
 FONT_SIZE: i32 : 20
+GRAVITY: rl.Vector2 : {0.0, 1800.0}
+JUMP_FORCE: f32 : 200.0
+
+physics :: proc(player: ^Player, ground_height: i32) {
+	player.velocity += GRAVITY * rl.GetFrameTime()
+	player.position += player.velocity * rl.GetFrameTime()
+
+	if player.position.y > f32(ground_height) - 40.0 {
+		player.velocity.y = 0.0
+		player.is_jumping = false
+	}
+}
 
 player_input :: proc(player: ^Player) {
-	direction := rl.Vector2{0.0, 0.0}
-
-	if rl.IsKeyDown(.W) {
-		direction.y -= 1
-	}
-	if rl.IsKeyDown(.S) {
-		direction.y += 1
-	}
 	if rl.IsKeyDown(.D) {
-		direction.x += 1
+		player.position.x += player.speed * rl.GetFrameTime()
 	}
 	if rl.IsKeyDown(.A) {
-		direction.x -= 1
+		player.position.x -= player.speed * rl.GetFrameTime()
 	}
-	player.position += direction * player.speed * rl.GetFrameTime()
+	if rl.IsKeyDown(.SPACE) {
+		player.velocity.y -= JUMP_FORCE
+		player.is_jumping = true
+	}
 }
 
 main :: proc() {
@@ -34,11 +43,15 @@ main :: proc() {
 	rl.InitWindow(screen_width, screen_height, "Game")
 	defer rl.CloseWindow()
 
-	rl.SetTargetFPS(30)
+	rl.SetTargetFPS(60)
 	rl.SetTraceLogLevel(.WARNING)
 
 	// game initialization
-	player := Player{rl.Vector2{f32(screen_width) / 2.0, f32(screen_height) / 2.0}, 200.0}
+	player_position := rl.Vector2{f32(screen_width) / 2.0, f32(screen_height) / 2.0}
+	player_velocity := rl.Vector2{0.0, 0.0}
+
+	player := Player{player_position, player_velocity, 200.0, false}
+	ground_height: i32 = screen_height - 50
 
 	for !rl.WindowShouldClose() {
 		// game logic
@@ -47,12 +60,15 @@ main :: proc() {
 		}
 
 		player_input(&player)
+		physics(&player, ground_height)
 
 		// drawing
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RAYWHITE)
 
 		rl.DrawRectangle(i32(player.position.x), i32(player.position.y), 40.0, 40.0, rl.BLACK)
+		rl.DrawLine(0, ground_height, screen_width, ground_height, rl.BLACK)
+		rl.DrawLine(100, ground_height - 100, 300, ground_height - 100, rl.BLACK)
 
 		rl.DrawText("Press Escape to close", 0.0, 0.0, FONT_SIZE, rl.BLACK)
 		rl.EndDrawing()
