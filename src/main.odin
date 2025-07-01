@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:time"
 import rl "vendor:raylib"
 
 Player :: struct {
@@ -10,36 +11,19 @@ Player :: struct {
 	on_ground: bool,
 }
 
-HLine :: struct {
-	x, y, length: i32,
-	color:        rl.Color,
-}
-
 FONT_SIZE: i32 : 20
-GRAVITY: rl.Vector2 : {0.0, 1800.0}
+GRAVITY: rl.Vector2 : {0.0, 2000.0}
 JUMP_FORCE: f32 : 800.0
 
-check_collision_rec_hline :: proc(rec: rl.Rectangle, line: HLine) -> bool {
-	return(
-		(f32(rec.y) + rec.height > f32(line.y)) &&
-		(rec.y <= f32(line.y)) &&
-		(rec.x + rec.width >= f32(line.x)) &&
-		rec.x <= f32(line.x) + f32(line.length) \
-	)
-}
 
-draw_hline :: proc(line: ^HLine) {
-	rl.DrawLine(line.x, line.y, line.length, line.y, line.color)
-}
-
-physics :: proc(player: ^Player, platforms: ^[2]HLine) {
+physics :: proc(player: ^Player, platforms: ^[2]rl.Rectangle) {
 	if player.on_ground == false {
-		player.velocity += GRAVITY * rl.GetFrameTime()
 		player.position += player.velocity * rl.GetFrameTime()
+		player.velocity += GRAVITY * rl.GetFrameTime()
 	}
 
 	for element in platforms {
-		if check_collision_rec_hline(
+		if rl.CheckCollisionRecs(
 			rl.Rectangle{player.position.x, player.position.y, 40.0, 40.0},
 			element,
 		) {
@@ -64,24 +48,24 @@ player_input :: proc(player: ^Player) {
 
 main :: proc() {
 	// raylib initialization
-	screen_width, screen_height: i32 : 1280, 720
-	rl.InitWindow(screen_width, screen_height, "Game")
+	screen_width, screen_height: f32 : 1280, 720
+	rl.InitWindow(i32(screen_width), i32(screen_height), "Game")
 	defer rl.CloseWindow()
 
 	rl.SetTargetFPS(60)
 	rl.SetTraceLogLevel(.WARNING)
 
 	// game initialization
-	player_position := rl.Vector2{f32(screen_width) / 2.0, f32(screen_height) / 2.0}
+	player_position := rl.Vector2{screen_width / 2.0, screen_height / 2.0}
 	player_velocity := rl.Vector2{0.0, 0.0}
 
 	player := Player{player_position, player_velocity, 200.0, true}
-	ground_height: i32 = screen_height - 50
+	ground_height: f32 = screen_height - 50.0
 
-	line_1: HLine = {0, ground_height, screen_width, rl.BLACK}
-	line_2: HLine = {100, ground_height - 100, 300, rl.BLACK}
+	box_1: rl.Rectangle = {0.0, ground_height, screen_width, 5.0}
+	box_2: rl.Rectangle = {100.0, ground_height - 100.0, 300.0, 5.0}
 
-	platforms := [2]HLine{line_1, line_2}
+	platforms := [2]rl.Rectangle{box_1, box_2}
 
 	for !rl.WindowShouldClose() {
 		// game logic
@@ -97,8 +81,9 @@ main :: proc() {
 		rl.ClearBackground(rl.RAYWHITE)
 
 		rl.DrawRectangle(i32(player.position.x), i32(player.position.y), 40.0, 40.0, rl.BLACK)
-		draw_hline(&line_1)
-		draw_hline(&line_2)
+
+		rl.DrawRectangleRec(box_1, rl.BLACK)
+		rl.DrawRectangleRec(box_2, rl.BLACK)
 
 		rl.DrawText("Press Escape to close", 0.0, 0.0, FONT_SIZE, rl.BLACK)
 		rl.EndDrawing()
