@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:strconv"
 import "core:time"
 import rl "vendor:raylib"
 
@@ -12,14 +13,19 @@ Player :: struct {
 }
 
 FONT_SIZE: i32 : 20
-GRAVITY: rl.Vector2 : {0.0, 2000.0}
+GRAVITY: rl.Vector2 : {0.0, 2500.0}
+TERMINAL_VELOCITY: rl.Vector2 : {1500, 1500}
 JUMP_FORCE: f32 : 800.0
 
 
 physics :: proc(player: ^Player, platforms: ^[2]rl.Rectangle) {
-	if player.on_ground == false {
+	if !player.on_ground {
 		player.position += player.velocity * rl.GetFrameTime()
 		player.velocity += GRAVITY * rl.GetFrameTime()
+
+		if player.velocity.y > TERMINAL_VELOCITY.y {
+			player.velocity.y = TERMINAL_VELOCITY.y
+		}
 	}
 
 	for element in platforms {
@@ -86,6 +92,7 @@ main :: proc() {
 		rl.DrawRectangleRec(box_2, rl.BLACK)
 
 		rl.DrawText("Press Escape to close", 0.0, 0.0, FONT_SIZE, rl.BLACK)
+
 		rl.EndDrawing()
 	}
 }
