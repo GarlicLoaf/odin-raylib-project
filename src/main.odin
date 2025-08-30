@@ -59,6 +59,30 @@ generate_terrain :: proc(size: int) -> Terrain {
 	return terrain
 }
 
+cam_to_world :: proc(cam: Camera2D, input: rl.Vector2) -> (rl.Vector2, ok: bool) {
+	output := rl.Vector2{}
+
+    if input.x < 0.0 || input.x > cam.width || input.y < 0.0 || input.y > cam.height {
+        return output, false
+    }
+	output.x := cam.pos.x + (input.x - cam.pos.x) * cam.zoom
+	output.y := cam.pos.y + (input.y - cam.pos.y) * cam.zoom
+    
+    return output, true
+}
+
+world_to_cam :: proc(cam: Camera2D, input: rl.Vector2) -> (rl.Vector2, ok: bool) {
+	output := rl.Vector2{}
+
+	output[0] := cam.pos[0] + (input[0] - cam.pos[0]) / cam.zoom
+	output[1] := cam.pos[1] + (input[1] - cam.pos[1]) / cam.zoom
+
+    ok := (0.0 <= output.x && output.x <= cam.width) &&
+          (0.0 <= output.y && output.y <= cam.height)
+    
+    return output, true
+}
+
 draw_terrain :: proc(terrain: Terrain, tile_size: int, cam: Camera2D) {
 	cam_left := int(cam.pos[0]) / tile_size
 	cam_top := int(cam.pos[1]) / tile_size
