@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:math"
 import "core:math/noise"
 import rl "vendor:raylib"
 
@@ -9,6 +10,7 @@ FONT_SIZE: i32 : 20
 Terrain :: struct {
 	tiles:         [][]f32,
 	width, height: int,
+	tile_size:     int,
 }
 
 Camera2D :: struct {
@@ -55,59 +57,27 @@ generate_terrain :: proc(size: int) -> Terrain {
 
 	simple_blur(&tiles)
 
-	terrain := Terrain{tiles, size, size}
+	terrain := Terrain{tiles, size, size, 64}
 	return terrain
 }
 
-cam_to_world :: proc(cam: Camera2D, input: rl.Vector2) -> (rl.Vector2, ok: bool) {
-	output := rl.Vector2{}
-
-    if input.x < 0.0 || input.x > cam.width || input.y < 0.0 || input.y > cam.height {
-        return output, false
-    }
-	output.x := cam.pos.x + (input.x - cam.pos.x) * cam.zoom
-	output.y := cam.pos.y + (input.y - cam.pos.y) * cam.zoom
-    
-    return output, true
-}
-
-world_to_cam :: proc(cam: Camera2D, input: rl.Vector2) -> (rl.Vector2, ok: bool) {
-	output := rl.Vector2{}
-
-	output[0] := cam.pos[0] + (input[0] - cam.pos[0]) / cam.zoom
-	output[1] := cam.pos[1] + (input[1] - cam.pos[1]) / cam.zoom
-
-    ok := (0.0 <= output.x && output.x <= cam.width) &&
-          (0.0 <= output.y && output.y <= cam.height)
-    
-    return output, true
-}
-
 draw_terrain :: proc(terrain: Terrain, tile_size: int, cam: Camera2D) {
-	cam_left := int(cam.pos[0]) / tile_size
-	cam_top := int(cam.pos[1]) / tile_size
-	cam_right := cam_left + int(cam.width) / 64
-	cam_bot := cam_top + int(cam.height) / 64
+	tiles_w := int(math.ceil(cam.width / (f64(tile_size) * cam.zoom))) + 1
+	tiles_h := int(math.ceil(cam.height / (f64(tile_size) * cam.zoom))) + 1
 
-	for i, x in cam_left ..< cam_right {
-		for j, y in cam_top ..< cam_bot {
-			if terrain.tiles[i][j] > 0.75 {
-				rl.DrawRectangle(
-					i32(f64(x * tile_size) * cam.zoom),
-					i32(f64(y * tile_size) * cam.zoom),
-					32,
-					32,
-					rl.BLUE,
-				)
-			} else {
-				rl.DrawRectangle(
-					i32(f64(x * tile_size) * cam.zoom),
-					i32(f64(y * tile_size) * cam.zoom),
-					32,
-					32,
-					rl.GREEN,
-				)
-			}
+	left := math.min(int(cam.pos.x) / int(tile_size), 0)
+	top := math.min(int(cam.pos.y) / int(tile_size), 0)
+
+	right := math.max(left + tiles_w, terrain.width)
+	bottom := math.max(top + tiles_h, terrain.height)
+
+	tile_draw_size := int(math.ceil(f64(terrain.tile_size) * cam.zoom))
+
+	fmt.println(tile_draw_size)
+
+	for x in left ..< right {
+		for y in top ..< bottom {
+			// print stuff here
 		}
 	}
 	return
