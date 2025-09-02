@@ -15,8 +15,8 @@ Terrain :: struct {
 
 Camera2D :: struct {
 	pos:           rl.Vector2,
-	zoom:          f64,
-	width, height: f64,
+	zoom:          f32,
+	width, height: f32,
 }
 
 simple_blur :: proc(tiles: ^[][]f32) {
@@ -62,22 +62,29 @@ generate_terrain :: proc(size: int) -> Terrain {
 }
 
 draw_terrain :: proc(terrain: Terrain, tile_size: int, cam: Camera2D) {
-	tiles_w := int(math.ceil(cam.width / (f64(tile_size) * cam.zoom))) + 1
-	tiles_h := int(math.ceil(cam.height / (f64(tile_size) * cam.zoom))) + 1
+	tiles_w := int(math.ceil(cam.width / (f32(tile_size) * cam.zoom))) + 1
+	tiles_h := int(math.ceil(cam.height / (f32(tile_size) * cam.zoom))) + 1
 
-	left := math.min(int(cam.pos.x) / int(tile_size), 0)
-	top := math.min(int(cam.pos.y) / int(tile_size), 0)
+	left := math.max(int(cam.pos.x) / int(tile_size), 0)
+	top := math.max(int(cam.pos.y) / int(tile_size), 0)
 
-	right := math.max(left + tiles_w, terrain.width)
-	bottom := math.max(top + tiles_h, terrain.height)
+	right := math.min(left + tiles_w, terrain.width)
+	bottom := math.min(top + tiles_h, terrain.height)
 
-	tile_draw_size := int(math.ceil(f64(terrain.tile_size) * cam.zoom))
-
-	fmt.println(tile_draw_size)
+	tile_draw_size := i32(math.ceil(f32(terrain.tile_size) * cam.zoom))
 
 	for x in left ..< right {
 		for y in top ..< bottom {
-			// print stuff here
+			wx := x * tile_size
+			wy := y * tile_size
+
+			sx := i32((f32(wx) - cam.pos.x) * cam.zoom)
+			sy := i32((f32(wy) - cam.pos.y) * cam.zoom)
+
+			col := rl.GREEN
+			if terrain.tiles[x][y] > 0.75 {col = rl.BLUE}
+
+			rl.DrawRectangle(sx, sy, tile_draw_size, tile_draw_size, col)
 		}
 	}
 	return
@@ -86,7 +93,7 @@ draw_terrain :: proc(terrain: Terrain, tile_size: int, cam: Camera2D) {
 
 main :: proc() {
 	// raylib initialization
-	screen_width, screen_height: f64 : 1280, 720
+	screen_width, screen_height: f32 : 1280, 720
 	rl.InitWindow(i32(screen_width), i32(screen_height), "Game")
 	defer rl.CloseWindow()
 
@@ -108,6 +115,10 @@ main :: proc() {
 
 		if rl.IsKeyPressed(.D) {
 			camera.pos[1] += 64
+		} else if rl.IsKeyPressed(.I) {
+			camera.zoom += 0.2
+		} else if rl.IsKeyPressed(.K) {
+			camera.zoom -= 0.2
 		}
 
 		// drawing
