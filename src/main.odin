@@ -9,14 +9,14 @@ FONT_SIZE: i32 : 20
 
 Terrain :: struct {
 	tiles:         [][]f32,
-	width, height: int,
-	tile_size:     int,
+	width, height: i32,
+	tile_size:     f32,
 }
 
 Camera2D :: struct {
 	pos:           rl.Vector2,
 	zoom:          f32,
-	width, height: f32,
+	width, height: i32,
 }
 
 simple_blur :: proc(tiles: ^[][]f32) {
@@ -39,7 +39,7 @@ simple_blur :: proc(tiles: ^[][]f32) {
 }
 
 
-generate_terrain :: proc(size: int) -> Terrain {
+generate_terrain :: proc(size: i32) -> Terrain {
 	tiles := make([][]f32, size)
 	scale := 0.05
 
@@ -61,25 +61,25 @@ generate_terrain :: proc(size: int) -> Terrain {
 	return terrain
 }
 
-draw_terrain :: proc(terrain: Terrain, tile_size: int, cam: Camera2D) {
-	tiles_w := int(math.ceil(cam.width / (f32(tile_size) * cam.zoom))) + 1
-	tiles_h := int(math.ceil(cam.height / (f32(tile_size) * cam.zoom))) + 1
+draw_terrain :: proc(terrain: Terrain, cam: Camera2D) {
+	tiles_w := i32(math.ceil(f32(cam.width) / (terrain.tile_size * cam.zoom))) + 1
+	tiles_h := i32(math.ceil(f32(cam.height) / (terrain.tile_size * cam.zoom))) + 1
 
-	left := math.max(int(cam.pos.x) / int(tile_size), 0)
-	top := math.max(int(cam.pos.y) / int(tile_size), 0)
+	left := i32(math.max(cam.pos.x / terrain.tile_size, 0))
+	top := i32(math.max(cam.pos.y / terrain.tile_size, 0))
 
-	right := math.min(left + tiles_w, terrain.width)
-	bottom := math.min(top + tiles_h, terrain.height)
+	right := i32(math.min(left + tiles_w, terrain.width))
+	bottom := i32(math.min(top + tiles_h, terrain.height))
 
-	tile_draw_size := i32(math.ceil(f32(terrain.tile_size) * cam.zoom))
+	tile_draw_size := i32(math.ceil(terrain.tile_size * cam.zoom))
 
 	for x in left ..< right {
 		for y in top ..< bottom {
-			wx := x * tile_size
-			wy := y * tile_size
+			wx := f32(x) * terrain.tile_size
+			wy := f32(y) * terrain.tile_size
 
-			sx := i32((f32(wx) - cam.pos.x) * cam.zoom)
-			sy := i32((f32(wy) - cam.pos.y) * cam.zoom)
+			sx := i32((wx - cam.pos.x) * cam.zoom)
+			sy := i32((wy - cam.pos.y) * cam.zoom)
 
 			col := rl.GREEN
 			if terrain.tiles[x][y] > 0.75 {col = rl.BLUE}
@@ -93,16 +93,16 @@ draw_terrain :: proc(terrain: Terrain, tile_size: int, cam: Camera2D) {
 
 main :: proc() {
 	// raylib initialization
-	screen_width, screen_height: f32 : 1280, 720
-	rl.InitWindow(i32(screen_width), i32(screen_height), "Game")
+	screen_width, screen_height: i32 : 1280, 720
+	rl.InitWindow(screen_width, screen_height, "Game")
 	defer rl.CloseWindow()
 
 	rl.SetTargetFPS(20)
 	rl.SetTraceLogLevel(.WARNING)
 
-	terrain_size := 64
+	terrain_size: i32 = 64
 	terrain: Terrain = generate_terrain(terrain_size)
-	tile_size := 32
+	tile_size: i32 = 32
 	scale := 0.25
 
 	camera := Camera2D{{0.0, 0.0}, 1.0, screen_width, screen_height}
@@ -125,7 +125,7 @@ main :: proc() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RAYWHITE)
 
-		draw_terrain(terrain, tile_size, camera)
+		draw_terrain(terrain, camera)
 
 		rl.DrawText("Press Escape to close", 0.0, 0.0, FONT_SIZE, rl.BLACK)
 
