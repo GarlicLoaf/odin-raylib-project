@@ -97,7 +97,7 @@ main :: proc() {
 	rl.InitWindow(screen_width, screen_height, "Game")
 	defer rl.CloseWindow()
 
-	rl.SetTargetFPS(20)
+	rl.SetTargetFPS(60)
 	rl.SetTraceLogLevel(.WARNING)
 
 	terrain_size: i32 = 64
@@ -113,9 +113,19 @@ main :: proc() {
 			rl.CloseWindow()
 		}
 
-		if rl.IsKeyPressed(.D) {
-			camera.pos[1] += 64
-		} else if rl.IsKeyPressed(.I) {
+		if rl.IsKeyDown(.W) {
+			camera.pos[1] -= 64 * 4.0 * rl.GetFrameTime()
+		}
+		if rl.IsKeyDown(.A) {
+			camera.pos[0] -= 64 * 4.0 * rl.GetFrameTime()
+		}
+		if rl.IsKeyDown(.S) {
+			camera.pos[1] += 64 * 4.0 * rl.GetFrameTime()
+		}
+		if rl.IsKeyDown(.D) {
+			camera.pos[0] += 64 * 4.0 * rl.GetFrameTime()
+		}
+		if rl.IsKeyPressed(.I) {
 			camera.zoom += 0.2
 		} else if rl.IsKeyPressed(.K) {
 			camera.zoom -= 0.2
